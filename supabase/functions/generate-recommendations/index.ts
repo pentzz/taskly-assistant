@@ -63,11 +63,13 @@ serve(async (req) => {
     // If no active tasks, return a motivational message
     if (!tasks || tasks.length === 0) {
       recommendations.push({
-        content: "כל הכבוד! אין לך משימות פתוחות כרגע. זה הזמן ליצור משימות חדשות ולהתקדם!",
+        content: "נראה שאין לך משימות פתוחות כרגע. זה הזמן המושלם להתחיל משהו חדש! אשמח לעזור לך לתעדף ולתכנן את המשימות הבאות שלך.",
         type: 'motivation',
         user_id: user.id
       });
     } else {
+      console.log('Tasks found:', tasks);
+
       // Generate AI recommendations based on tasks
       const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -86,16 +88,12 @@ serve(async (req) => {
               3. לתת מוטיבציה מותאמת אישית בהתבסס על תוכן המשימות
               4. להיות תמציתי וברור
               5. להתייחס לתוכן המשימה ולתת טיפים רלוונטיים
-              6. לשים לב במיוחד למשימות שמסומנות כדחופות`
+              6. לשים לב במיוחד למשימות שמסומנות כדחופות
+              7. לא לציין שאין לך גישה למשימות - המשימות מועברות אליך בפורמט JSON`
             },
             {
               role: 'user',
-              content: `המשימות הפתוחות הן: ${JSON.stringify(tasks.map(task => ({
-                title: task.title,
-                description: task.description,
-                due_date_type: task.due_date_type,
-                due_date: task.due_date
-              })), null, 2)}`
+              content: `אנא נתח את המשימות הבאות ותן המלצה קצרה ומוטיבציה: ${JSON.stringify(tasks, null, 2)}`
             }
           ],
           temperature: 0.7,
@@ -105,6 +103,10 @@ serve(async (req) => {
 
       const aiData = await openAIResponse.json();
       console.log('AI Response:', aiData);
+
+      if (aiData.error) {
+        throw new Error(`OpenAI API error: ${aiData.error.message}`);
+      }
 
       // Add the AI-generated recommendation
       recommendations.push({
