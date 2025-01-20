@@ -45,7 +45,7 @@ export function RecommendationsSection() {
     },
     enabled: showRecommendations,
     staleTime: 0, // Don't cache the data
-    cacheTime: 0, // Remove data from cache immediately
+    gcTime: 0, // Remove data from cache immediately (formerly cacheTime)
   });
 
   // Cleanup recommendations when component unmounts or when showRecommendations changes to false
