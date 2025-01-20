@@ -33,7 +33,6 @@ const Dashboard = () => {
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Check if user is authenticated
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -64,6 +63,7 @@ const Dashboard = () => {
       let query = supabase
         .from("tasks")
         .select("*")
+        .eq('user_id', userId)
         .order("due_date", { ascending: true });
 
       if (statusFilter) {
@@ -86,7 +86,7 @@ const Dashboard = () => {
       console.log("Tasks fetched successfully:", data);
       return data as Task[];
     },
-    enabled: !!userId, // Only run query when we have a userId
+    enabled: !!userId,
   });
 
   const getStatusColor = (status: string | null) => {
@@ -100,7 +100,6 @@ const Dashboard = () => {
     }
   };
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -109,7 +108,6 @@ const Dashboard = () => {
     );
   }
 
-  // Show error state
   if (error) {
     console.error("Error in dashboard:", error);
     return (
@@ -121,7 +119,6 @@ const Dashboard = () => {
     );
   }
 
-  // Show not authenticated state
   if (!userId) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
@@ -141,7 +138,7 @@ const Dashboard = () => {
               <SelectValue placeholder="סינון לפי סטטוס" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">הכל</SelectItem>
+              <SelectItem value="all">הכל</SelectItem>
               <SelectItem value="pending">בהמתנה</SelectItem>
               <SelectItem value="in_progress">בביצוע</SelectItem>
               <SelectItem value="completed">הושלם</SelectItem>
