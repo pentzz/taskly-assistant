@@ -44,30 +44,30 @@ export function RecommendationsSection() {
 
   return (
     <Card className="p-6 mb-8 glass-morphism bg-gradient-to-br from-violet-50/90 to-indigo-50/90">
-      <div className="flex justify-between items-center mb-4">
-        <Button
-          onClick={() => refetch()}
-          variant="ghost"
-          size="icon"
-          className="hover:bg-violet-100"
-          disabled={isLoading}
-        >
-          <RefreshCw className={`h-4 w-4 text-violet-600 ${isLoading ? 'animate-spin' : ''}`} />
-        </Button>
-        <CollapsibleTrigger
-          onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 text-lg font-semibold text-gray-700 hover:text-violet-700 transition-colors"
-        >
-          המלצות העוזר האישי
-          {isOpen ? (
-            <ChevronUp className="h-5 w-5" />
-          ) : (
-            <ChevronDown className="h-5 w-5" />
-          )}
-        </CollapsibleTrigger>
-      </div>
+      <Collapsible open={isOpen}>
+        <div className="flex justify-between items-center mb-4">
+          <Button
+            onClick={() => refetch()}
+            variant="ghost"
+            size="icon"
+            className="hover:bg-violet-100"
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 text-violet-600 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+          <CollapsibleTrigger
+            onClick={() => setIsOpen(!isOpen)}
+            className="flex items-center gap-2 text-lg font-semibold text-gray-700 hover:text-violet-700 transition-colors"
+          >
+            המלצות העוזר האישי
+            {isOpen ? (
+              <ChevronUp className="h-5 w-5" />
+            ) : (
+              <ChevronDown className="h-5 w-5" />
+            )}
+          </CollapsibleTrigger>
+        </div>
 
-      <Collapsible open={isOpen} className="space-y-4">
         <CollapsibleContent className="space-y-4 animate-accordion-down">
           {recommendations?.map((rec) => (
             <div
