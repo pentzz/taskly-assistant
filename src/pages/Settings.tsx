@@ -61,15 +61,40 @@ export default function Settings() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      const { error } = await supabase
+      // First check if settings exist for this user
+      const { data: existingSettings } = await supabase
         .from('user_settings')
-        .upsert({
-          user_id: session.user.id,
-          language,
-          theme,
-          notifications,
-          updated_at: new Date().toISOString(),
-        });
+        .select('id')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+
+      let error;
+      
+      if (existingSettings) {
+        // Update existing settings
+        const { error: updateError } = await supabase
+          .from('user_settings')
+          .update({
+            language,
+            theme,
+            notifications,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', session.user.id);
+        error = updateError;
+      } else {
+        // Insert new settings
+        const { error: insertError } = await supabase
+          .from('user_settings')
+          .insert({
+            user_id: session.user.id,
+            language,
+            theme,
+            notifications,
+            updated_at: new Date().toISOString(),
+          });
+        error = insertError;
+      }
 
       if (error) throw error;
 
@@ -85,10 +110,6 @@ export default function Settings() {
         description: "אנא נסה שוב מאוחר יותר",
       });
     }
-  };
-
-  const handleContactSupport = () => {
-    window.location.href = "mailto:support@taskly.com?subject=תמיכה%20ב-Taskly%20Assistant";
   };
 
   if (isLoading) {
