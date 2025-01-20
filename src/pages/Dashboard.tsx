@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Calendar, Search, Filter } from "lucide-react";
+import { Plus, Calendar, Search, Filter, Edit, CheckSquare } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -207,7 +207,7 @@ const Dashboard = () => {
                       onClick={() => handleEditTask(task.id)}
                       className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-800"
                     >
-                      <Edit2 className="h-4 w-4" />
+                      <Edit className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
