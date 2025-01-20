@@ -68,10 +68,12 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
           if (data.due_date_type === "date" && data.due_date) {
             setDueDate(new Date(data.due_date));
           }
-          setDueDateType(data.due_date_type || "date");
+          setDueDateType(data.due_date_type as DueDateType || "date");
           setStatus(data.status || "pending");
           setIsRecurring(data.is_recurring || false);
-          setRecurrencePattern(data.recurrence_pattern || null);
+          if (data.recurrence_pattern) {
+            setRecurrencePattern(data.recurrence_pattern as RecurrencePattern);
+          }
         }
       } catch (error) {
         console.error("Error loading task:", error);
@@ -255,7 +257,7 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
                   תדירות חזרה
                 </label>
                 <Select
-                  value={recurrencePattern || ""}
+                  value={recurrencePattern || undefined}
                   onValueChange={(value: RecurrencePattern) => setRecurrencePattern(value)}
                 >
                   <SelectTrigger className="bg-white/50">
