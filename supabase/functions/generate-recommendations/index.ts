@@ -66,61 +66,75 @@ serve(async (req) => {
         type: 'motivation',
         user_id: user.id
       })
-      
-      const { error: insertError } = await supabaseClient
-        .from('recommendations')
-        .insert(recommendations)
+    } else {
+      // Check for urgent tasks
+      const urgentTasks = tasks.filter(task => 
+        task.due_date_type === 'urgent' || 
+        task.due_date_type === 'asap'
+      )
 
-      if (insertError) {
-        throw insertError
+      if (urgentTasks.length > 0) {
+        urgentTasks.forEach(task => {
+          recommendations.push({
+            content: `המשימה "${task.title}" מסומנת כדחופה - כדאי לטפל בה בהקדם!`,
+            type: 'urgent',
+            user_id: user.id,
+            reasoning: `משימה זו הוגדרה כ${task.due_date_type === 'urgent' ? 'דחופה' : 'לביצוע בהקדם'}`
+          })
+        })
       }
 
-      return new Response(JSON.stringify({ recommendations }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      // Check for tasks due today
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      const todayTasks = tasks.filter(task => {
+        if (!task.due_date || task.due_date_type !== 'date') return false
+        const taskDate = new Date(task.due_date)
+        taskDate.setHours(0, 0, 0, 0)
+        return taskDate.getTime() === today.getTime()
       })
-    }
 
-    // Check for urgent tasks (due within 2 days)
-    const twoDaysFromNow = new Date()
-    twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2)
-    
-    const urgentTasks = tasks.filter(task => {
-      if (!task.due_date) return false
-      const dueDate = new Date(task.due_date)
-      return dueDate <= twoDaysFromNow
-    })
+      if (todayTasks.length > 0) {
+        todayTasks.forEach(task => {
+          recommendations.push({
+            content: `המשימה "${task.title}" מתוכננת להיום - זה הזמן לטפל בה!`,
+            type: 'overdue',
+            user_id: user.id,
+            reasoning: 'משימה זו מתוכננת להיום'
+          })
+        })
+      }
 
-    if (urgentTasks.length > 0) {
-      recommendations.push({
-        content: `יש ${urgentTasks.length} משימות דחופות שצריך לטפל בהן בימים הקרובים!`,
-        type: 'urgent',
-        user_id: user.id
+      // Check for overdue tasks
+      const overdueTasks = tasks.filter(task => {
+        if (!task.due_date || task.due_date_type !== 'date') return false
+        const taskDate = new Date(task.due_date)
+        taskDate.setHours(0, 0, 0, 0)
+        return taskDate < today
       })
-    }
 
-    // Check for overdue tasks
-    const today = new Date()
-    const overdueTasks = tasks.filter(task => {
-      if (!task.due_date) return false
-      const dueDate = new Date(task.due_date)
-      return dueDate < today
-    })
+      if (overdueTasks.length > 0) {
+        overdueTasks.forEach(task => {
+          recommendations.push({
+            content: `המשימה "${task.title}" עברה את תאריך היעד - כדאי לטפל בה בדחיפות!`,
+            type: 'overdue',
+            user_id: user.id,
+            reasoning: 'משימה זו עברה את תאריך היעד'
+          })
+        })
+      }
 
-    if (overdueTasks.length > 0) {
-      recommendations.push({
-        content: `${overdueTasks.length} משימות עברו את תאריך היעד. כדאי לטפל בהן בהקדם!`,
-        type: 'overdue',
-        user_id: user.id
-      })
-    }
-
-    // If we have tasks but none are urgent or overdue, add a general recommendation
-    if (recommendations.length === 0 && tasks.length > 0) {
-      recommendations.push({
-        content: `יש לך ${tasks.length} משימות פתוחות. בוא נתקדם איתן בקצב שלך!`,
-        type: 'motivation',
-        user_id: user.id
-      })
+      // If we have tasks but none are urgent/overdue/today, add a general recommendation
+      if (recommendations.length === 0) {
+        const tasksList = tasks.map(task => `"${task.title}"`).join(', ')
+        recommendations.push({
+          content: `יש לך ${tasks.length} משימות פתוחות: ${tasksList}. בוא נתקדם איתן בקצב שלך!`,
+          type: 'motivation',
+          user_id: user.id,
+          reasoning: 'סקירה כללית של המשימות הפתוחות'
+        })
+      }
     }
 
     // Save new recommendations
