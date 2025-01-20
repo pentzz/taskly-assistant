@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
 import Settings from "./pages/Settings";
+import Archive from "./pages/Archive";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,6 +78,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/archive"
+              element={
+                <ProtectedRoute>
+                  <Archive />
                 </ProtectedRoute>
               }
             />

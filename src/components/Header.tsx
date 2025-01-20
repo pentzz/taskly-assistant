@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { LogOut, Menu, X, Settings, Info, Home } from "lucide-react";
+import { LogOut, Menu, X, Settings, Info, Home, Archive } from "lucide-react";
 import { Button } from "./ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +37,7 @@ export function Header() {
 
   const menuItems = [
     { label: "לוח מחוונים", path: "/", icon: Home },
+    { label: "ארכיון משימות", path: "/archive", icon: Archive },
     { label: "אודות", path: "/about", icon: Info },
     { label: "הגדרות", path: "/settings", icon: Settings },
   ];
