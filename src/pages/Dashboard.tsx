@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { TaskFormModal } from "@/components/TaskFormModal";
 import { AIAssistantModal } from "@/components/AIAssistantModal";
 import { RecommendationsSection } from "@/components/RecommendationsSection";
 
@@ -35,9 +35,9 @@ const statusTranslations = {
 const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
+  const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -55,7 +55,7 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const { data: tasks, isLoading, error } = useQuery({
+  const { data: tasks, isLoading, error, refetch } = useQuery({
     queryKey: ["tasks", statusFilter, userId],
     queryFn: async () => {
       if (!userId) return [];
@@ -272,11 +272,19 @@ const Dashboard = () => {
         )}
 
         <Button
-          className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-105"
-          onClick={() => navigate("/tasks/new")}
+          className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-105 animate-bounce"
+          onClick={() => setIsTaskFormOpen(true)}
         >
           <Plus className="h-6 w-6" />
         </Button>
+
+        <TaskFormModal
+          open={isTaskFormOpen}
+          onOpenChange={setIsTaskFormOpen}
+          onTaskCreated={() => {
+            void refetch();
+          }}
+        />
 
         <AIAssistantModal 
           tasks={tasks} 
