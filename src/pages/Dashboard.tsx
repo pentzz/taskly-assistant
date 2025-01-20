@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Calendar, Circle } from "lucide-react";
+import { Plus, Calendar } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 type Task = {
   id: string;
@@ -31,11 +31,36 @@ const statusTranslations = {
 const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const { toast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Check if user is authenticated
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log("Current session:", session);
+      if (session?.user) {
+        setUserId(session.user.id);
+        console.log("User ID:", session.user.id);
+      } else {
+        console.log("No active session found");
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const { data: tasks, isLoading, error } = useQuery({
-    queryKey: ["tasks", statusFilter],
+    queryKey: ["tasks", statusFilter, userId],
     queryFn: async () => {
-      console.log("Fetching tasks with filter:", statusFilter);
+      console.log("Starting to fetch tasks...");
+      console.log("Current user ID:", userId);
+      console.log("Status filter:", statusFilter);
+
+      if (!userId) {
+        console.log("No user ID available, cannot fetch tasks");
+        return [];
+      }
+
       let query = supabase
         .from("tasks")
         .select("*")
@@ -45,6 +70,7 @@ const Dashboard = () => {
         query = query.eq("status", statusFilter);
       }
 
+      console.log("Executing Supabase query...");
       const { data, error } = await query;
 
       if (error) {
@@ -60,6 +86,7 @@ const Dashboard = () => {
       console.log("Tasks fetched successfully:", data);
       return data as Task[];
     },
+    enabled: !!userId, // Only run query when we have a userId
   });
 
   const getStatusColor = (status: string | null) => {
@@ -84,10 +111,22 @@ const Dashboard = () => {
 
   // Show error state
   if (error) {
+    console.error("Error in dashboard:", error);
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-red-500">שגיאה בטעינת המשימות</p>
+        <p className="text-sm text-gray-400">{(error as Error).message}</p>
         <Button onClick={() => window.location.reload()}>נסה שוב</Button>
+      </div>
+    );
+  }
+
+  // Show not authenticated state
+  if (!userId) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-red-500">אנא התחבר כדי לצפות במשימות</p>
+        <Button onClick={() => window.location.href = "/login"}>התחבר</Button>
       </div>
     );
   }
