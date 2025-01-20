@@ -44,30 +44,37 @@ export function RecommendationsSection() {
       return recommendations as Recommendation[];
     },
     enabled: showRecommendations,
+    staleTime: 0, // Don't cache the data
+    cacheTime: 0, // Remove data from cache immediately
   });
 
-  // Reset state and clean up recommendations when component unmounts
+  // Cleanup recommendations when component unmounts or when showRecommendations changes to false
   useEffect(() => {
-    return () => {
-      const cleanup = async () => {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            await supabase
-              .from("recommendations")
-              .delete()
-              .eq("user_id", session.user.id);
-          }
-        } catch (error) {
-          console.error("Error cleaning up recommendations:", error);
+    const cleanup = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await supabase
+            .from("recommendations")
+            .delete()
+            .eq("user_id", session.user.id);
         }
-      };
-      
+      } catch (error) {
+        console.error("Error cleaning up recommendations:", error);
+      }
+    };
+
+    // Run cleanup when component unmounts or when showRecommendations becomes false
+    if (!showRecommendations) {
       cleanup();
-      setShowRecommendations(false);
+    }
+
+    // Also run cleanup when component unmounts
+    return () => {
+      cleanup();
       setIsCollapsed(true);
     };
-  }, []);
+  }, [showRecommendations]);
 
   const handleGetHelp = async () => {
     try {
