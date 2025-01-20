@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Filter } from "lucide-react";
+import { Plus, Filter, Calendar, Circle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -23,7 +23,7 @@ type Task = {
 };
 
 const statusTranslations = {
-  pending: "ממתין",
+  pending: "בהמתנה",
   in_progress: "בביצוע",
   completed: "הושלם",
 };
@@ -59,8 +59,15 @@ const Dashboard = () => {
     },
   });
 
-  const handleAddTask = () => {
-    console.log("Add task clicked");
+  const getStatusColor = (status: string | null) => {
+    switch (status) {
+      case "completed":
+        return "bg-green-500/20 text-green-500";
+      case "in_progress":
+        return "bg-blue-500/20 text-blue-500";
+      default:
+        return "bg-yellow-500/20 text-yellow-500";
+    }
   };
 
   if (isLoading) {
@@ -72,54 +79,56 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
+    <div className="container mx-auto p-4 space-y-6 min-h-screen bg-gradient-to-b from-gray-900 to-gray-800">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold">משימות</h1>
+        <h1 className="text-3xl font-bold text-white">משימות</h1>
         <div className="flex gap-4 w-full sm:w-auto">
           <Select onValueChange={(value) => setStatusFilter(value)}>
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px] glass-morphism">
               <SelectValue placeholder="סינון לפי סטטוס" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">הכל</SelectItem>
-              <SelectItem value="pending">ממתין</SelectItem>
+              <SelectItem value="pending">בהמתנה</SelectItem>
               <SelectItem value="in_progress">בביצוע</SelectItem>
               <SelectItem value="completed">הושלם</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleAddTask}>
-            <Plus className="ml-2 rtl-flip" />
-            הוסף משימה
-          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {tasks?.map((task) => (
-          <Card key={task.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="text-xl">{task.title}</CardTitle>
+          <Card 
+            key={task.id} 
+            className="hover:scale-105 transition-transform duration-200 overflow-hidden backdrop-blur-xl bg-white/5 border border-white/10 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3)]"
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xl font-semibold text-white">
+                {task.title}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               {task.description && (
-                <p className="text-muted-foreground">{task.description}</p>
+                <p className="text-gray-300 line-clamp-2">{task.description}</p>
               )}
-              {task.due_date && (
-                <p className="text-sm">
-                  תאריך יעד: {new Date(task.due_date).toLocaleDateString('he-IL')}
-                </p>
-              )}
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Calendar className="h-4 w-4" />
+                {task.due_date ? (
+                  new Date(task.due_date).toLocaleDateString('he-IL')
+                ) : (
+                  "לא נקבע תאריך"
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <span
-                  className={`px-2 py-1 rounded-full text-xs ${
-                    task.status === "completed"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                      : task.status === "in_progress"
-                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-                      : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100"
-                  }`}
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                    task.status
+                  )}`}
                 >
-                  {task.status ? statusTranslations[task.status as keyof typeof statusTranslations] : "ממתין"}
+                  {task.status
+                    ? statusTranslations[task.status as keyof typeof statusTranslations]
+                    : "בהמתנה"}
                 </span>
               </div>
             </CardContent>
@@ -129,9 +138,16 @@ const Dashboard = () => {
 
       {tasks?.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">לא נמצאו משימות</p>
+          <p className="text-gray-400">לא נמצאו משימות</p>
         </div>
       )}
+
+      <Button
+        className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-200 backdrop-blur-xl bg-primary/80"
+        onClick={() => console.log("Add task clicked")}
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
     </div>
   );
 };
