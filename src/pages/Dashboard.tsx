@@ -35,6 +35,7 @@ const Dashboard = () => {
   const { data: tasks, isLoading } = useQuery({
     queryKey: ["tasks", statusFilter],
     queryFn: async () => {
+      console.log("Fetching tasks...");
       let query = supabase
         .from("tasks")
         .select("*")
@@ -47,6 +48,7 @@ const Dashboard = () => {
       const { data, error } = await query;
 
       if (error) {
+        console.error("Error fetching tasks:", error);
         toast({
           variant: "destructive",
           title: "שגיאה בטעינת המשימות",
@@ -55,6 +57,7 @@ const Dashboard = () => {
         throw error;
       }
 
+      console.log("Tasks fetched:", data);
       return data as Task[];
     },
   });
