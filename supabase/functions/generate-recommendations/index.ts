@@ -8,6 +8,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -24,7 +25,12 @@ serve(async (req) => {
       .select('*')
       .order('due_date', { ascending: true })
 
-    if (tasksError) throw tasksError
+    if (tasksError) {
+      console.error('Error fetching tasks:', tasksError)
+      throw tasksError
+    }
+
+    console.log('Tasks fetched successfully:', tasks)
 
     const prompt = `
       בהתבסס על המשימות הבאות, צור המלצות בעברית לתעדוף וקיבוץ משימות. התייחס ל:
@@ -41,6 +47,8 @@ serve(async (req) => {
       ההמלצות צריכות להיות בעברית, והטקסט צריך להיות מסודר מימין לשמאל.
     `
 
+    console.log('Sending request to OpenAI with prompt:', prompt)
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -56,7 +64,15 @@ serve(async (req) => {
       }),
     })
 
+    if (!response.ok) {
+      const error = await response.json()
+      console.error('OpenAI API error:', error)
+      throw new Error(error.error?.message || 'Failed to generate recommendations')
+    }
+
     const data = await response.json()
+    console.log('OpenAI response:', data)
+    
     const recommendations = data.choices[0].message.content
 
     // Parse recommendations and store them
@@ -66,13 +82,18 @@ serve(async (req) => {
       if (line.trim()) {
         const [content, reasoning] = line.split('\nהסבר: ')
         
-        await supabaseClient
+        const { error: insertError } = await supabaseClient
           .from('recommendations')
           .insert({
             content: content.trim(),
             reasoning: reasoning?.trim(),
             type: 'task_analysis'
           })
+
+        if (insertError) {
+          console.error('Error inserting recommendation:', insertError)
+          throw insertError
+        }
       }
     }
 
@@ -80,6 +101,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
+    console.error('Error in generate-recommendations function:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
