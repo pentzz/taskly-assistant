@@ -1,110 +1,88 @@
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { RefreshCw, ChevronDown, ChevronUp, Info } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
-import { supabase } from "@/integrations/supabase/client"
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, CheckCircle2, Clock } from "lucide-react";
 
 interface Recommendation {
-  id: string
-  content: string
-  reasoning?: string
-  type: string
+  id: string;
+  content: string;
+  type: string;
+  reasoning: string | null;
 }
 
+const getRecommendationIcon = (type: string) => {
+  switch (type) {
+    case "urgent":
+      return <AlertCircle className="h-5 w-5 text-red-500" />;
+    case "overdue":
+      return <Clock className="h-5 w-5 text-orange-500" />;
+    case "motivation":
+      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+    default:
+      return null;
+  }
+};
+
 export function RecommendationsSection() {
-  const [isOpen, setIsOpen] = useState(true)
-  const [expandedRecommendations, setExpandedRecommendations] = useState<string[]>([])
-
-  const { data: recommendations, refetch, isLoading } = useQuery({
-    queryKey: ['recommendations'],
+  const { data: recommendations, refetch } = useQuery({
+    queryKey: ["recommendations"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('recommendations')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const { data: recommendations, error } = await supabase
+        .from("recommendations")
+        .select("*");
 
-      if (error) throw error
-      return data as Recommendation[]
+      if (error) {
+        console.error("Error fetching recommendations:", error);
+        throw error;
+      }
+
+      return recommendations as Recommendation[];
     },
-  })
+  });
 
-  const toggleRecommendation = (id: string) => {
-    setExpandedRecommendations(prev =>
-      prev.includes(id)
-        ? prev.filter(recId => recId !== id)
-        : [...prev, id]
-    )
+  useEffect(() => {
+    const generateRecommendations = async () => {
+      try {
+        await supabase.functions.invoke("generate-recommendations");
+        refetch();
+      } catch (error) {
+        console.error("Error generating recommendations:", error);
+      }
+    };
+
+    generateRecommendations();
+  }, [refetch]);
+
+  if (!recommendations?.length) {
+    return null;
   }
 
   return (
-    <Card className="p-6 mb-8 glass-morphism bg-gradient-to-br from-violet-50/90 to-indigo-50/90">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <div className="flex justify-between items-center mb-4">
-          <Button
-            onClick={() => refetch()}
-            variant="ghost"
-            size="icon"
-            className="hover:bg-violet-100"
-            disabled={isLoading}
-          >
-            <RefreshCw className={`h-4 w-4 text-violet-600 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
-          <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex items-center gap-2 text-lg font-semibold text-gray-700 hover:text-violet-700 transition-colors"
-            >
-              המלצות העוזר האישי
-              {isOpen ? (
-                <ChevronUp className="h-5 w-5" />
-              ) : (
-                <ChevronDown className="h-5 w-5" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
-        </div>
-
-        <CollapsibleContent className="space-y-4 animate-accordion-down">
-          {recommendations?.map((rec) => (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="text-xl font-bold">המלצות העוזר האישי</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {recommendations.map((recommendation) => (
             <div
-              key={rec.id}
-              className="p-4 rounded-lg bg-white/50 border border-gray-200 hover:border-violet-200 transition-colors"
+              key={recommendation.id}
+              className="flex items-start gap-3 p-3 rounded-lg bg-gray-50"
             >
-              <div className="flex justify-between items-start gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="mt-1 hover:bg-violet-100"
-                  onClick={() => toggleRecommendation(rec.id)}
-                >
-                  <Info className="h-4 w-4 text-violet-600" />
-                </Button>
-                <p className="text-right text-gray-700 leading-relaxed" style={{ direction: 'rtl' }}>
-                  {rec.content}
-                </p>
-              </div>
-              
-              {expandedRecommendations.includes(rec.id) && rec.reasoning && (
-                <div className="mt-4 p-3 rounded-lg bg-violet-50 border border-violet-100">
-                  <p className="text-right text-gray-600 text-sm leading-relaxed" style={{ direction: 'rtl' }}>
-                    {rec.reasoning}
+              {getRecommendationIcon(recommendation.type)}
+              <div>
+                <p className="text-gray-800">{recommendation.content}</p>
+                {recommendation.reasoning && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {recommendation.reasoning}
                   </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           ))}
-
-          {(!recommendations || recommendations.length === 0) && (
-            <p className="text-center text-gray-500">אין המלצות חדשות כרגע</p>
-          )}
-        </CollapsibleContent>
-      </Collapsible>
+        </div>
+      </CardContent>
     </Card>
-  )
+  );
 }
