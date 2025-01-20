@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { AIAssistantModal } from "@/components/AIAssistantModal";
 
 type Task = {
   id: string;
@@ -128,13 +129,13 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-primary to-blue-600 mb-2 animate-scale-in">
+          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400 mb-2 animate-scale-in">
             ניהול המשימות שלי
           </h1>
-          <p className="text-gray-600 animate-fade-in">נהל את המשימות שלך בקלות ויעילות</p>
+          <p className="text-gray-400 animate-fade-in">נהל את המשימות שלך בקלות ויעילות</p>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -142,14 +143,14 @@ const Dashboard = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="חיפוש משימות..."
-              className="pl-10 bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
+              className="pl-10 bg-black/20 border-gray-700 focus:border-purple-500 transition-colors"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <div className="flex gap-4 w-full sm:w-auto">
             <Select onValueChange={(value) => setStatusFilter(value)}>
-              <SelectTrigger className="w-full sm:w-[180px] bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
+              <SelectTrigger className="w-full sm:w-[180px] bg-black/20 border-gray-700">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="סינון לפי סטטוס" />
               </SelectTrigger>
@@ -167,18 +168,18 @@ const Dashboard = () => {
           {filteredTasks?.map((task) => (
             <Card 
               key={task.id} 
-              className="hover:scale-102 transition-all duration-200 bg-white/80 backdrop-blur-sm border border-gray-100 shadow-sm hover:shadow-lg"
+              className="hover:scale-102 transition-all duration-200 bg-black/20 backdrop-blur-sm border-gray-800 hover:border-purple-500/50"
             >
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-semibold text-gray-800">
+                <CardTitle className="text-xl font-semibold text-gray-200">
                   {task.title}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {task.description && (
-                  <p className="text-gray-600 line-clamp-2">{task.description}</p>
+                  <p className="text-gray-400 line-clamp-2">{task.description}</p>
                 )}
-                <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="flex items-center gap-2 text-sm text-gray-400">
                   <Calendar className="h-4 w-4" />
                   {task.due_date ? (
                     new Date(task.due_date).toLocaleDateString('he-IL')
@@ -204,16 +205,18 @@ const Dashboard = () => {
 
         {(!filteredTasks || filteredTasks.length === 0) && (
           <div className="text-center py-12">
-            <p className="text-gray-500">לא נמצאו משימות</p>
+            <p className="text-gray-400">לא נמצאו משימות</p>
           </div>
         )}
 
         <Button
-          className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-primary to-blue-600 hover:scale-105"
+          className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-purple-600 to-blue-600 hover:scale-105"
           onClick={() => navigate("/tasks/new")}
         >
           <Plus className="h-6 w-6" />
         </Button>
+
+        <AIAssistantModal tasks={tasks} />
       </div>
     </div>
   );
