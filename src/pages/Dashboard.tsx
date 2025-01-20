@@ -32,10 +32,10 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const { toast } = useToast();
 
-  const { data: tasks, isLoading } = useQuery({
+  const { data: tasks, isLoading, error } = useQuery({
     queryKey: ["tasks", statusFilter],
     queryFn: async () => {
-      console.log("Fetching tasks...");
+      console.log("Fetching tasks with filter:", statusFilter);
       let query = supabase
         .from("tasks")
         .select("*")
@@ -57,7 +57,7 @@ const Dashboard = () => {
         throw error;
       }
 
-      console.log("Tasks fetched:", data);
+      console.log("Tasks fetched successfully:", data);
       return data as Task[];
     },
   });
@@ -73,10 +73,21 @@ const Dashboard = () => {
     }
   };
 
+  // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-red-500">שגיאה בטעינת המשימות</p>
+        <Button onClick={() => window.location.reload()}>נסה שוב</Button>
       </div>
     );
   }
@@ -139,7 +150,7 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {tasks?.length === 0 && (
+      {(!tasks || tasks.length === 0) && (
         <div className="text-center py-12">
           <p className="text-gray-400">לא נמצאו משימות</p>
         </div>
@@ -147,7 +158,13 @@ const Dashboard = () => {
 
       <Button
         className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-shadow duration-200 backdrop-blur-xl bg-primary/80"
-        onClick={() => console.log("Add task clicked")}
+        onClick={() => {
+          console.log("Add task clicked");
+          toast({
+            title: "בקרוב...",
+            description: "אפשרות להוספת משימה תתווסף בקרוב",
+          });
+        }}
       >
         <Plus className="h-6 w-6" />
       </Button>
