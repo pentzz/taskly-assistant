@@ -35,6 +35,16 @@ serve(async (req) => {
       throw userError
     }
 
+    // Delete existing recommendations for this user
+    const { error: deleteError } = await supabaseClient
+      .from('recommendations')
+      .delete()
+      .eq('user_id', user.id)
+
+    if (deleteError) {
+      throw deleteError
+    }
+
     // Get active tasks
     const { data: tasks, error: tasksError } = await supabaseClient
       .from('tasks')
@@ -82,7 +92,7 @@ serve(async (req) => {
 
     if (urgentTasks.length > 0) {
       recommendations.push({
-        content: `יש ${urgentTasks.length} משימות דחופות שצריך לטפל בהן בימים הקרובים. כדאי להתמקד בהן קודם!`,
+        content: `יש ${urgentTasks.length} משימות דחופות שצריך לטפל בהן בימים הקרובים!`,
         type: 'urgent',
         user_id: user.id
       })
@@ -98,7 +108,7 @@ serve(async (req) => {
 
     if (overdueTasks.length > 0) {
       recommendations.push({
-        content: `${overdueTasks.length} משימות עברו את תאריך היעד. בוא נטפל בהן!`,
+        content: `${overdueTasks.length} משימות עברו את תאריך היעד. כדאי לטפל בהן בהקדם!`,
         type: 'overdue',
         user_id: user.id
       })
@@ -111,16 +121,6 @@ serve(async (req) => {
         type: 'motivation',
         user_id: user.id
       })
-    }
-
-    // Delete old recommendations
-    const { error: deleteError } = await supabaseClient
-      .from('recommendations')
-      .delete()
-      .eq('user_id', user.id)
-
-    if (deleteError) {
-      throw deleteError
     }
 
     // Save new recommendations

@@ -46,6 +46,14 @@ export function RecommendationsSection() {
     enabled: showRecommendations,
   });
 
+  // Reset state when component unmounts
+  useEffect(() => {
+    return () => {
+      setShowRecommendations(false);
+      setIsCollapsed(true);
+    };
+  }, []);
+
   const handleGetHelp = async () => {
     try {
       await supabase.functions.invoke("generate-recommendations");
