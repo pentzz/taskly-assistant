@@ -23,8 +23,8 @@ const Login = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-          <p className="text-muted-foreground">Sign in to your account to continue</p>
+          <h1 className="text-3xl font-bold tracking-tight">ברוכים הבאים</h1>
+          <p className="text-muted-foreground">התחברו למערכת כדי להמשיך</p>
         </div>
 
         {error && (
@@ -49,7 +49,28 @@ const Login = () => {
               className: {
                 container: 'w-full',
                 button: 'w-full',
-                input: 'rounded-md',
+                input: 'rounded-md text-right',
+                label: 'text-right block',
+              },
+            }}
+            localization={{
+              variables: {
+                sign_in: {
+                  email_label: 'דואר אלקטרוני',
+                  password_label: 'סיסמה',
+                  button_label: 'התחברות',
+                  loading_button_label: 'מתחבר...',
+                  social_provider_text: 'התחבר באמצעות',
+                  link_text: 'יש לך כבר חשבון? התחבר',
+                },
+                sign_up: {
+                  email_label: 'דואר אלקטרוני',
+                  password_label: 'סיסמה',
+                  button_label: 'הרשמה',
+                  loading_button_label: 'נרשם...',
+                  social_provider_text: 'הירשם באמצעות',
+                  link_text: 'אין לך חשבון? הירשם',
+                },
               },
             }}
             theme="dark"
