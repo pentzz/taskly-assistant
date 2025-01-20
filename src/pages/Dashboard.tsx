@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Plus, Calendar, Search, Filter } from "lucide-react";
 import {
   Select,
@@ -27,12 +27,6 @@ type Task = {
   due_date: string | null;
   status: string | null;
   user_id: string | null;
-};
-
-const statusTranslations = {
-  pending: "בהמתנה",
-  in_progress: "בביצוע",
-  completed: "הושלם",
 };
 
 const Dashboard = () => {
@@ -121,6 +115,30 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeleteTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      toast({
+        title: "המשימה נמחקה בהצלחה",
+      });
+      
+      refetch();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "אירעה שגיאה בעת מחיקת המשימה",
+      });
+    }
+  };
+
   const filteredTasks = tasks?.filter(task => 
     task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (task.description?.toLowerCase() || "").includes(searchQuery.toLowerCase())
@@ -192,6 +210,7 @@ const Dashboard = () => {
                 task={task}
                 onEdit={handleEditTask}
                 onComplete={handleCompleteTask}
+                onDelete={handleDeleteTask}
               />
             ))}
           </div>

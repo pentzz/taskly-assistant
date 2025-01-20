@@ -1,6 +1,17 @@
-import { CheckSquare, Calendar, Edit, RefreshCw } from "lucide-react";
+import { CheckSquare, Calendar, Edit, RefreshCw, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TaskCardProps {
   task: {
@@ -15,9 +26,10 @@ interface TaskCardProps {
   };
   onEdit: (id: string) => void;
   onComplete: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export function TaskCard({ task, onEdit, onComplete }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onComplete, onDelete }: TaskCardProps) {
   const isCompleted = task.status === "completed";
   
   const getDueDate = () => {
@@ -80,6 +92,34 @@ export function TaskCard({ task, onEdit, onComplete }: TaskCardProps) {
           >
             <CheckSquare className="h-4 w-4" />
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-gray-400 hover:text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>האם אתה בטוח?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  פעולה זו תמחק את המשימה לצמיתות ולא ניתן יהיה לשחזר אותה.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>ביטול</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDelete(task.id)}
+                  className="bg-red-500 hover:bg-red-600"
+                >
+                  מחק משימה
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
         <h3 className="text-xl font-medium text-gray-800">{task.title}</h3>
       </div>
