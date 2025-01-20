@@ -80,20 +80,22 @@ serve(async (req) => {
           messages: [
             {
               role: 'system',
-              content: `אתה עוזר אישי שנותן המלצות קצרות ומוטיבציה. עליך:
+              content: `אתה עוזר אישי שנותן המלצות קצרות ומוטיבציה בעברית. עליך:
               1. לנתח את המשימות ולתת המלצה קצרה וממוקדת (עד 2 משפטים)
               2. להתייחס למשימות הדחופות ביותר קודם
-              3. לתת מוטיבציה מותאמת אישית בהתבסס על סוג המשימות
-              4. להיות תמציתי וברור`
+              3. לתת מוטיבציה מותאמת אישית בהתבסס על תוכן המשימות
+              4. להיות תמציתי וברור
+              5. להתייחס לתוכן המשימה ולתת טיפים רלוונטיים
+              6. לשים לב במיוחד למשימות שמסומנות כדחופות`
             },
             {
               role: 'user',
-              content: `המשימות הפתוחות הן: ${tasks.map(task => ({
+              content: `המשימות הפתוחות הן: ${JSON.stringify(tasks.map(task => ({
                 title: task.title,
                 description: task.description,
                 due_date_type: task.due_date_type,
                 due_date: task.due_date
-              }))}`
+              })), null, 2)}`
             }
           ],
           temperature: 0.7,
@@ -102,11 +104,11 @@ serve(async (req) => {
       });
 
       const aiData = await openAIResponse.json();
-      const aiRecommendation = aiData.choices[0].message.content;
+      console.log('AI Response:', aiData);
 
       // Add the AI-generated recommendation
       recommendations.push({
-        content: aiRecommendation,
+        content: aiData.choices[0].message.content,
         type: tasks.some(t => t.due_date_type === 'urgent') ? 'urgent' : 'motivation',
         user_id: user.id,
         reasoning: 'המלצה מותאמת אישית מבוססת AI'
