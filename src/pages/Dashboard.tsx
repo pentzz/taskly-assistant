@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Add this import
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ const statusTranslations = {
 };
 
 const Dashboard = () => {
+  const navigate = useNavigate(); // Add this line
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
