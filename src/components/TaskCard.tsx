@@ -1,4 +1,4 @@
-import { CheckSquare, Calendar, Edit, RefreshCw, Trash2 } from "lucide-react";
+import { CheckSquare, Calendar, Edit, RefreshCw, Trash2, Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -23,13 +23,23 @@ interface TaskCardProps {
     status?: string | null;
     is_recurring?: boolean;
     recurrence_pattern?: "daily" | "weekly" | "monthly" | null;
+    is_archived?: boolean;
   };
   onEdit: (id: string) => void;
   onComplete: (id: string) => void;
   onDelete: (id: string) => void;
+  onArchive: (id: string) => void;
+  onRestore?: (id: string) => void;
 }
 
-export function TaskCard({ task, onEdit, onComplete, onDelete }: TaskCardProps) {
+export function TaskCard({ 
+  task, 
+  onEdit, 
+  onComplete, 
+  onDelete,
+  onArchive,
+  onRestore 
+}: TaskCardProps) {
   const isCompleted = task.status === "completed";
   
   const getDueDate = () => {
@@ -92,6 +102,25 @@ export function TaskCard({ task, onEdit, onComplete, onDelete }: TaskCardProps) 
           >
             <CheckSquare className="h-4 w-4" />
           </Button>
+          {task.is_archived ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onRestore?.(task.id)}
+              className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50"
+            >
+              <ArchiveRestore className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onArchive(task.id)}
+              className="h-8 w-8 text-gray-400 hover:text-amber-600 hover:bg-amber-50"
+            >
+              <Archive className="h-4 w-4" />
+            </Button>
+          )}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
