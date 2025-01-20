@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
+import { TaskForm } from "./components/TaskForm";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,6 +76,14 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tasks/new"
+              element={
+                <ProtectedRoute>
+                  <TaskForm />
                 </ProtectedRoute>
               }
             />

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 type Task = {
   id: string;
@@ -34,6 +35,7 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -208,12 +210,7 @@ const Dashboard = () => {
 
         <Button
           className="fixed bottom-6 left-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 bg-gradient-to-r from-primary to-blue-600 hover:scale-105"
-          onClick={() => {
-            toast({
-              title: "בקרוב...",
-              description: "אפשרות להוספת משימה תתווסף בקרוב",
-            });
-          }}
+          onClick={() => navigate("/tasks/new")}
         >
           <Plus className="h-6 w-6" />
         </Button>
