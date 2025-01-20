@@ -44,7 +44,7 @@ export function RecommendationsSection() {
 
   return (
     <Card className="p-6 mb-8 glass-morphism bg-gradient-to-br from-violet-50/90 to-indigo-50/90">
-      <Collapsible open={isOpen}>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div className="flex justify-between items-center mb-4">
           <Button
             onClick={() => refetch()}
@@ -55,16 +55,18 @@ export function RecommendationsSection() {
           >
             <RefreshCw className={`h-4 w-4 text-violet-600 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
-          <CollapsibleTrigger
-            onClick={() => setIsOpen(!isOpen)}
-            className="flex items-center gap-2 text-lg font-semibold text-gray-700 hover:text-violet-700 transition-colors"
-          >
-            המלצות העוזר האישי
-            {isOpen ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
+          <CollapsibleTrigger asChild>
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 text-lg font-semibold text-gray-700 hover:text-violet-700 transition-colors"
+            >
+              המלצות העוזר האישי
+              {isOpen ? (
+                <ChevronUp className="h-5 w-5" />
+              ) : (
+                <ChevronDown className="h-5 w-5" />
+              )}
+            </Button>
           </CollapsibleTrigger>
         </div>
 
