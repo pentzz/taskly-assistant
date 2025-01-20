@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { AIAssistantModal } from "@/components/AIAssistantModal";
+import { RecommendationsSection } from "@/components/RecommendationsSection";
 
 type Task = {
   id: string;
@@ -128,6 +129,20 @@ const Dashboard = () => {
     }
   };
 
+  useEffect(() => {
+    const generateRecommendations = async () => {
+      try {
+        await supabase.functions.invoke('generate-recommendations')
+      } catch (error) {
+        console.error('Error generating recommendations:', error)
+      }
+    }
+
+    if (userId) {
+      generateRecommendations()
+    }
+  }, [userId]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -156,14 +171,16 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black pb-20">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
         <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400 mb-2 animate-scale-in">
+          <h1 className="text-4xl font-bold text-gray-700 mb-2 animate-scale-in">
             ניהול המשימות שלי
           </h1>
-          <p className="text-gray-400 animate-fade-in">נהל את המשימות שלך בקלות ויעילות</p>
+          <p className="text-gray-500 animate-fade-in">נהל את המשימות שלך בקלות ויעילות</p>
         </div>
+
+        <RecommendationsSection />
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div className="relative w-full sm:w-96">
@@ -195,17 +212,17 @@ const Dashboard = () => {
           {filteredTasks?.map((task) => (
             <Card 
               key={task.id} 
-              className="hover:scale-102 transition-all duration-200 bg-black/20 backdrop-blur-sm border-gray-800 hover:border-purple-500/50"
+              className="hover:scale-102 transition-all duration-200 bg-white/80 backdrop-blur-sm border-gray-200 hover:border-violet-300 shadow-sm hover:shadow-md"
             >
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-semibold text-gray-200 flex justify-between items-center">
+                <CardTitle className="text-xl font-semibold text-gray-700 flex justify-between items-center">
                   {task.title}
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleEditTask(task.id)}
-                      className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-800"
+                      className="h-8 w-8 text-gray-400 hover:text-violet-600 hover:bg-violet-50"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -213,7 +230,7 @@ const Dashboard = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleCompleteTask(task.id)}
-                      className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-800"
+                      className="h-8 w-8 text-gray-400 hover:text-violet-600 hover:bg-violet-50"
                     >
                       <CheckSquare className="h-4 w-4" />
                     </Button>
