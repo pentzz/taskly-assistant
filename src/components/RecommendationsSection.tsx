@@ -44,11 +44,10 @@ export function RecommendationsSection() {
       return recommendations as Recommendation[];
     },
     enabled: showRecommendations,
-    staleTime: 0, // Don't cache the data
-    gcTime: 0, // Remove data from cache immediately (formerly cacheTime)
+    staleTime: 0,
+    gcTime: 0,
   });
 
-  // Cleanup recommendations when component unmounts or when showRecommendations changes to false
   useEffect(() => {
     const cleanup = async () => {
       try {
@@ -64,12 +63,10 @@ export function RecommendationsSection() {
       }
     };
 
-    // Run cleanup when component unmounts or when showRecommendations becomes false
     if (!showRecommendations) {
       cleanup();
     }
 
-    // Also run cleanup when component unmounts
     return () => {
       cleanup();
       setIsCollapsed(true);
@@ -129,11 +126,28 @@ export function RecommendationsSection() {
             {recommendations.map((recommendation) => (
               <div
                 key={recommendation.id}
-                className="flex items-start gap-3 p-3 rounded-lg bg-white/80"
+                className="flex items-start gap-3 p-4 rounded-lg bg-white/80 shadow-sm hover:shadow-md transition-all duration-200"
               >
                 {getRecommendationIcon(recommendation.type)}
-                <div>
-                  <p className="text-gray-800">{recommendation.content}</p>
+                <div className="flex-1">
+                  {recommendation.content.split('המלצה:').map((part, index) => {
+                    if (index === 0) return null;
+                    const [recommendation, motivation] = part.split('מוטיבציה:');
+                    return (
+                      <div key={index} className="space-y-2">
+                        <div className="space-y-1">
+                          <h4 className="font-semibold text-purple-700">המלצה</h4>
+                          <p className="text-gray-800">{recommendation.trim()}</p>
+                        </div>
+                        {motivation && (
+                          <div className="space-y-1">
+                            <h4 className="font-semibold text-blue-700">מוטיבציה</h4>
+                            <p className="text-gray-800">{motivation.trim()}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
