@@ -46,9 +46,24 @@ export function RecommendationsSection() {
     enabled: showRecommendations,
   });
 
-  // Reset state when component unmounts
+  // Reset state and clean up recommendations when component unmounts
   useEffect(() => {
     return () => {
+      const cleanup = async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            await supabase
+              .from("recommendations")
+              .delete()
+              .eq("user_id", session.user.id);
+          }
+        } catch (error) {
+          console.error("Error cleaning up recommendations:", error);
+        }
+      };
+      
+      cleanup();
       setShowRecommendations(false);
       setIsCollapsed(true);
     };
