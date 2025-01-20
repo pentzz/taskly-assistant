@@ -10,9 +10,19 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const checkCurrentSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate("/");
+      }
+    };
+    
+    checkCurrentSession();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed in Login:", event, session);
       if (event === "SIGNED_IN" && session) {
-        navigate("/dashboard");
+        navigate("/");
       }
     });
 
