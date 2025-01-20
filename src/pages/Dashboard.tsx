@@ -101,6 +101,33 @@ const Dashboard = () => {
     (task.description?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
+  const handleEditTask = async (taskId: string) => {
+    navigate(`/tasks/${taskId}/edit`);
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: 'completed' })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      toast({
+        title: "המשימה הושלמה בהצלחה",
+        description: "כל הכבוד! המשכ/י כך",
+      });
+    } catch (error) {
+      console.error('Error completing task:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "אירעה שגיאה בעת עדכון המשימה",
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50">
@@ -171,8 +198,26 @@ const Dashboard = () => {
               className="hover:scale-102 transition-all duration-200 bg-black/20 backdrop-blur-sm border-gray-800 hover:border-purple-500/50"
             >
               <CardHeader className="pb-2">
-                <CardTitle className="text-xl font-semibold text-gray-200">
+                <CardTitle className="text-xl font-semibold text-gray-200 flex justify-between items-center">
                   {task.title}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditTask(task.id)}
+                      className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-800"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleCompleteTask(task.id)}
+                      className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-800"
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -216,7 +261,11 @@ const Dashboard = () => {
           <Plus className="h-6 w-6" />
         </Button>
 
-        <AIAssistantModal tasks={tasks} />
+        <AIAssistantModal 
+          tasks={tasks} 
+          onEditTask={handleEditTask}
+          onCompleteTask={handleCompleteTask}
+        />
       </div>
     </div>
   );

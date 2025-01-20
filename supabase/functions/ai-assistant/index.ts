@@ -12,21 +12,19 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, type, taskData } = await req.json()
+    const { prompt, type, taskData, userName } = await req.json()
 
     let systemPrompt = ''
-    switch (type) {
-      case 'prioritize':
-        systemPrompt = `You are a helpful task management assistant. Analyze the following tasks and suggest priorities based on due dates and status. Respond in Hebrew.`
-        break
-      case 'split':
-        systemPrompt = `You are a task breakdown specialist. Break down the following task into smaller, actionable steps. Respond in Hebrew.`
-        break
-      case 'motivate':
-        systemPrompt = `You are an encouraging assistant. Provide a motivational message in Hebrew for completing a task.`
-        break
-      default:
-        systemPrompt = `You are a helpful task management assistant. Answer questions about tasks and provide guidance in Hebrew.`
+    if (type === 'initial') {
+      systemPrompt = `אתה עוזר אישי ידידותי שמדבר בעברית. אתה צריך להציג את עצמך ולשאול את המשתמש מה שמו. השתמש בשפה חמה ונעימה.`
+    } else if (type === 'tasks') {
+      systemPrompt = `אתה עוזר אישי ידידותי שמדבר בעברית. אתה מנתח משימות ומציג אותן בצורה ברורה ונעימה. כשאתה מציג משימות:
+      - השתמש בתגית <b> להדגשת טקסט חשוב
+      - הצג את המידע בצורה מסודרת עם רווחים ושורות חדשות
+      - התייחס למשתמש בשמו אם ידוע לך (${userName})
+      - הצע עזרה נוספת בסוף`
+    } else {
+      systemPrompt = `אתה עוזר אישי ידידותי שמדבר בעברית. אתה עוזר למשתמש ${userName || ''} לנהל את המשימות שלו ביעילות.`
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
