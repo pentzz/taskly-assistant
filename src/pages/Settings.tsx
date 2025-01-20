@@ -32,24 +32,29 @@ export default function Settings() {
           .from('user_settings')
           .select('*')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
 
         if (data) {
-          setLanguage(data.language);
-          setTheme(data.theme);
-          setNotifications(data.notifications);
+          setLanguage(data.language || 'he');
+          setTheme(data.theme || 'light');
+          setNotifications(data.notifications ?? true);
         }
       } catch (error) {
         console.error('Error loading settings:', error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בטעינת ההגדרות",
+          description: "אנא נסה שוב מאוחר יותר",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     loadSettings();
-  }, []);
+  }, [toast]);
 
   const handleSaveSettings = async () => {
     try {
@@ -148,7 +153,7 @@ export default function Settings() {
             
             <Button
               variant="outline"
-              onClick={handleContactSupport}
+              onClick={() => window.location.href = "mailto:support@taskly.com?subject=תמיכה%20ב-Taskly%20Assistant"}
               className="w-full"
             >
               <Mail className="ml-2 h-4 w-4" />
