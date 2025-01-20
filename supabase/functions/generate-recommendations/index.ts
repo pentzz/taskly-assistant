@@ -49,6 +49,27 @@ serve(async (req) => {
 
     const recommendations = []
 
+    // If no active tasks, return a motivational message
+    if (!tasks || tasks.length === 0) {
+      recommendations.push({
+        content: "כל הכבוד! אין לך משימות פתוחות כרגע. זה הזמן ליצור משימות חדשות!",
+        type: 'motivation',
+        user_id: user.id
+      })
+      
+      const { error: insertError } = await supabaseClient
+        .from('recommendations')
+        .insert(recommendations)
+
+      if (insertError) {
+        throw insertError
+      }
+
+      return new Response(JSON.stringify({ recommendations }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
     // Check for urgent tasks (due within 2 days)
     const twoDaysFromNow = new Date()
     twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2)
@@ -61,7 +82,7 @@ serve(async (req) => {
 
     if (urgentTasks.length > 0) {
       recommendations.push({
-        content: `יש ${urgentTasks.length} משימות דחופות שצריך לטפל בהן בימים הקרובים`,
+        content: `יש ${urgentTasks.length} משימות דחופות שצריך לטפל בהן בימים הקרובים. כדאי להתמקד בהן קודם!`,
         type: 'urgent',
         user_id: user.id
       })
@@ -77,22 +98,16 @@ serve(async (req) => {
 
     if (overdueTasks.length > 0) {
       recommendations.push({
-        content: `${overdueTasks.length} משימות עברו את תאריך היעד, כדאי לטפל בהן בהקדם`,
+        content: `${overdueTasks.length} משימות עברו את תאריך היעד. בוא נטפל בהן!`,
         type: 'overdue',
         user_id: user.id
       })
     }
 
-    // Get completed tasks for motivation
-    const { data: completedTasks } = await supabaseClient
-      .from('tasks')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('status', 'completed')
-
-    if (completedTasks && completedTasks.length > 0) {
+    // If we have tasks but none are urgent or overdue, add a general recommendation
+    if (recommendations.length === 0 && tasks.length > 0) {
       recommendations.push({
-        content: `כל הכבוד! השלמת ${completedTasks.length} משימות. המשך כך!`,
+        content: `יש לך ${tasks.length} משימות פתוחות. בוא נתקדם איתן בקצב שלך!`,
         type: 'motivation',
         user_id: user.id
       })
