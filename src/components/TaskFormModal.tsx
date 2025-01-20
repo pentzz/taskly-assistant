@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { he } from "date-fns/locale";
@@ -26,10 +26,11 @@ import { supabase } from "@/integrations/supabase/client";
 interface TaskFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  taskId?: string | null;
   onTaskCreated?: () => void;
 }
 
-export function TaskFormModal({ open, onOpenChange, onTaskCreated }: TaskFormModalProps) {
+export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: TaskFormModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState<Date>();
@@ -37,6 +38,41 @@ export function TaskFormModal({ open, onOpenChange, onTaskCreated }: TaskFormMod
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [titleError, setTitleError] = useState("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    const loadTask = async () => {
+      if (!taskId) {
+        resetForm();
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("tasks")
+          .select("*")
+          .eq("id", taskId)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setTitle(data.title);
+          setDescription(data.description || "");
+          setDueDate(data.due_date ? new Date(data.due_date) : undefined);
+          setStatus(data.status || "pending");
+        }
+      } catch (error) {
+        console.error("Error loading task:", error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה בטעינת המשימה",
+          description: "אירעה שגיאה בעת טעינת פרטי המשימה",
+        });
+      }
+    };
+
+    loadTask();
+  }, [taskId, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,31 +85,41 @@ export function TaskFormModal({ open, onOpenChange, onTaskCreated }: TaskFormMod
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from("tasks").insert([
-        {
-          title: title.trim(),
-          description: description.trim(),
-          due_date: dueDate?.toISOString(),
-          status,
-        },
-      ]);
+      const taskData = {
+        title: title.trim(),
+        description: description.trim(),
+        due_date: dueDate?.toISOString(),
+        status,
+      };
+
+      let error;
+      if (taskId) {
+        ({ error } = await supabase
+          .from("tasks")
+          .update(taskData)
+          .eq("id", taskId));
+      } else {
+        ({ error } = await supabase.from("tasks").insert([taskData]));
+      }
 
       if (error) throw error;
 
       toast({
-        title: "המשימה נוצרה בהצלחה",
-        description: "המשימה החדשה נוספה לרשימת המשימות שלך",
+        title: taskId ? "המשימה עודכנה בהצלחה" : "המשימה נוצרה בהצלחה",
+        description: taskId
+          ? "פרטי המשימה עודכנו בהצלחה"
+          : "המשימה החדשה נוספה לרשימת המשימות שלך",
       });
       
       onTaskCreated?.();
       onOpenChange(false);
       resetForm();
     } catch (error) {
-      console.error("Error creating task:", error);
+      console.error("Error saving task:", error);
       toast({
         variant: "destructive",
-        title: "שגיאה ביצירת המשימה",
-        description: "אירעה שגיאה בעת יצירת המשימה. נא לנסות שוב.",
+        title: taskId ? "שגיאה בעדכון המשימה" : "שגיאה ביצירת המשימה",
+        description: "אירעה שגיאה בעת שמירת המשימה. נא לנסות שוב.",
       });
     } finally {
       setIsSubmitting(false);
@@ -92,7 +138,9 @@ export function TaskFormModal({ open, onOpenChange, onTaskCreated }: TaskFormMod
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] bg-white/95 backdrop-blur-sm border-gray-200 shadow-lg animate-in fade-in-0 zoom-in-95">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-right">משימה חדשה</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-right">
+            {taskId ? "עריכת משימה" : "משימה חדשה"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-6 mt-4 rtl" dir="rtl">
           <div className="space-y-4">
@@ -182,7 +230,7 @@ export function TaskFormModal({ open, onOpenChange, onTaskCreated }: TaskFormMod
               disabled={isSubmitting}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              {isSubmitting ? "שומר..." : "שמור"}
+              {isSubmitting ? "שומר..." : taskId ? "עדכן" : "שמור"}
             </Button>
           </div>
         </form>
