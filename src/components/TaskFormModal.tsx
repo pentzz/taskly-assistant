@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -34,7 +35,10 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState<Date>();
+  const [dueDateType, setDueDateType] = useState<"date" | "unknown" | "urgent" | "asap">("date");
   const [status, setStatus] = useState("pending");
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrencePattern, setRecurrencePattern] = useState<"daily" | "weekly" | "monthly" | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [titleError, setTitleError] = useState("");
   const { toast } = useToast();
@@ -58,8 +62,13 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
         if (data) {
           setTitle(data.title);
           setDescription(data.description || "");
-          setDueDate(data.due_date ? new Date(data.due_date) : undefined);
+          if (data.due_date_type === "date" && data.due_date) {
+            setDueDate(new Date(data.due_date));
+          }
+          setDueDateType(data.due_date_type || "date");
           setStatus(data.status || "pending");
+          setIsRecurring(data.is_recurring || false);
+          setRecurrencePattern(data.recurrence_pattern || null);
         }
       } catch (error) {
         console.error("Error loading task:", error);
@@ -88,8 +97,11 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
       const taskData = {
         title: title.trim(),
         description: description.trim(),
-        due_date: dueDate?.toISOString(),
+        due_date: dueDateType === "date" ? dueDate?.toISOString() : null,
+        due_date_type: dueDateType,
         status,
+        is_recurring: isRecurring,
+        recurrence_pattern: isRecurring ? recurrencePattern : null,
       };
 
       let error;
@@ -130,13 +142,16 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
     setTitle("");
     setDescription("");
     setDueDate(undefined);
+    setDueDateType("date");
     setStatus("pending");
+    setIsRecurring(false);
+    setRecurrencePattern(null);
     setTitleError("");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] bg-white/95 backdrop-blur-sm border-gray-200 shadow-lg animate-in fade-in-0 zoom-in-95">
+      <DialogContent className="sm:max-w-[500px] bg-white/95 backdrop-blur-sm border-gray-200 shadow-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-right">
             {taskId ? "עריכת משימה" : "משימה חדשה"}
@@ -173,32 +188,84 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">
-                תאריך יעד
+                סוג תאריך יעד
               </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-right bg-white/50"
-                  >
-                    <Calendar className="ml-2 h-4 w-4" />
-                    {dueDate ? (
-                      format(dueDate, "P", { locale: he })
-                    ) : (
-                      <span className="text-gray-500">בחר תאריך</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={dueDate}
-                    onSelect={setDueDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Select value={dueDateType} onValueChange={(value: "date" | "unknown" | "urgent" | "asap") => setDueDateType(value)}>
+                <SelectTrigger className="bg-white/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">תאריך ספציפי</SelectItem>
+                  <SelectItem value="unknown">לא ידוע</SelectItem>
+                  <SelectItem value="urgent">דחוף</SelectItem>
+                  <SelectItem value="asap">בהקדם האפשרי</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {dueDateType === "date" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  תאריך יעד
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start text-right bg-white/50"
+                    >
+                      <Calendar className="ml-2 h-4 w-4" />
+                      {dueDate ? (
+                        format(dueDate, "P", { locale: he })
+                      ) : (
+                        <span className="text-gray-500">בחר תאריך</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={dueDate}
+                      onSelect={setDueDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700">
+                  משימה חוזרת
+                </label>
+                <Switch
+                  checked={isRecurring}
+                  onCheckedChange={setIsRecurring}
+                />
+              </div>
+            </div>
+
+            {isRecurring && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  תדירות חזרה
+                </label>
+                <Select
+                  value={recurrencePattern || ""}
+                  onValueChange={(value: "daily" | "weekly" | "monthly") => setRecurrencePattern(value)}
+                >
+                  <SelectTrigger className="bg-white/50">
+                    <SelectValue placeholder="בחר תדירות" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">יומי</SelectItem>
+                    <SelectItem value="weekly">שבועי</SelectItem>
+                    <SelectItem value="monthly">חודשי</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">

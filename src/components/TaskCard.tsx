@@ -1,4 +1,4 @@
-import { CheckSquare, Calendar, Edit } from "lucide-react";
+import { CheckSquare, Calendar, Edit, RefreshCw } from "lucide-react";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
@@ -8,7 +8,10 @@ interface TaskCardProps {
     title: string;
     description?: string | null;
     due_date?: string | null;
+    due_date_type?: "date" | "unknown" | "urgent" | "asap" | null;
     status?: string | null;
+    is_recurring?: boolean;
+    recurrence_pattern?: "daily" | "weekly" | "monthly" | null;
   };
   onEdit: (id: string) => void;
   onComplete: (id: string) => void;
@@ -18,10 +21,35 @@ export function TaskCard({ task, onEdit, onComplete }: TaskCardProps) {
   const isCompleted = task.status === "completed";
   
   const getDueDate = () => {
-    if (!task.due_date) return "לא ידוע";
-    if (task.due_date === "urgent") return "דחוף";
-    if (task.due_date === "asap") return "בהקדם האפשרי";
-    return new Date(task.due_date).toLocaleDateString("he-IL");
+    if (!task.due_date_type || task.due_date_type === "date") {
+      return task.due_date ? new Date(task.due_date).toLocaleDateString("he-IL") : "לא ידוע";
+    }
+    
+    switch (task.due_date_type) {
+      case "unknown":
+        return "לא ידוע";
+      case "urgent":
+        return "דחוף";
+      case "asap":
+        return "בהקדם האפשרי";
+      default:
+        return "לא ידוע";
+    }
+  };
+
+  const getRecurrenceText = () => {
+    if (!task.is_recurring || !task.recurrence_pattern) return null;
+    
+    switch (task.recurrence_pattern) {
+      case "daily":
+        return "חוזר מדי יום";
+      case "weekly":
+        return "חוזר מדי שבוע";
+      case "monthly":
+        return "חוזר מדי חודש";
+      default:
+        return null;
+    }
   };
 
   return (
@@ -64,6 +92,13 @@ export function TaskCard({ task, onEdit, onComplete }: TaskCardProps) {
         <Calendar className="h-4 w-4" />
         {getDueDate()}
       </div>
+      
+      {task.is_recurring && (
+        <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
+          <RefreshCw className="h-4 w-4" />
+          {getRecurrenceText()}
+        </div>
+      )}
       
       <div className="mt-4">
         <span className={cn(

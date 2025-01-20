@@ -40,6 +40,7 @@ export type Database = {
         Row: {
           description: string | null
           due_date: string | null
+          due_date_type: Database["public"]["Enums"]["due_date_type"] | null
           id: string
           is_archived: boolean | null
           is_recurring: boolean | null
@@ -52,6 +53,7 @@ export type Database = {
         Insert: {
           description?: string | null
           due_date?: string | null
+          due_date_type?: Database["public"]["Enums"]["due_date_type"] | null
           id?: string
           is_archived?: boolean | null
           is_recurring?: boolean | null
@@ -64,6 +66,7 @@ export type Database = {
         Update: {
           description?: string | null
           due_date?: string | null
+          due_date_type?: Database["public"]["Enums"]["due_date_type"] | null
           id?: string
           is_archived?: boolean | null
           is_recurring?: boolean | null
@@ -113,7 +116,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      due_date_type: "date" | "unknown" | "urgent" | "asap"
+      recurrence_pattern_type: "daily" | "weekly" | "monthly"
     }
     CompositeTypes: {
       [_ in never]: never
