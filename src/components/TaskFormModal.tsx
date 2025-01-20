@@ -31,14 +31,17 @@ interface TaskFormModalProps {
   onTaskCreated?: () => void;
 }
 
+type RecurrencePattern = "daily" | "weekly" | "monthly";
+type DueDateType = "date" | "unknown" | "urgent" | "asap";
+
 export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: TaskFormModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState<Date>();
-  const [dueDateType, setDueDateType] = useState<"date" | "unknown" | "urgent" | "asap">("date");
+  const [dueDateType, setDueDateType] = useState<DueDateType>("date");
   const [status, setStatus] = useState("pending");
   const [isRecurring, setIsRecurring] = useState(false);
-  const [recurrencePattern, setRecurrencePattern] = useState<"daily" | "weekly" | "monthly" | null>(null);
+  const [recurrencePattern, setRecurrencePattern] = useState<RecurrencePattern | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [titleError, setTitleError] = useState("");
   const { toast } = useToast();
@@ -190,7 +193,7 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
               <label className="text-sm font-medium text-gray-700">
                 סוג תאריך יעד
               </label>
-              <Select value={dueDateType} onValueChange={(value: "date" | "unknown" | "urgent" | "asap") => setDueDateType(value)}>
+              <Select value={dueDateType} onValueChange={(value: DueDateType) => setDueDateType(value)}>
                 <SelectTrigger className="bg-white/50">
                   <SelectValue />
                 </SelectTrigger>
@@ -253,7 +256,7 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
                 </label>
                 <Select
                   value={recurrencePattern || ""}
-                  onValueChange={(value: "daily" | "weekly" | "monthly") => setRecurrencePattern(value)}
+                  onValueChange={(value: RecurrencePattern) => setRecurrencePattern(value)}
                 >
                   <SelectTrigger className="bg-white/50">
                     <SelectValue placeholder="בחר תדירות" />
