@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Search, Filter } from "lucide-react";
 import {
   Select,
@@ -27,20 +27,37 @@ type Task = {
 };
 
 const Archive = () => {
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUserId(session.user.id);
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    checkAuth();
+    return () => subscription.unsubscribe();
+  }, []);
 
   const { data: tasks, isLoading, error, refetch } = useQuery({
-    queryKey: ["archived-tasks", statusFilter],
+    queryKey: ["archived-tasks", statusFilter, userId],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
+      if (!userId) return [];
 
       let query = supabase
         .from("tasks")
         .select("*")
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('is_archived', true)
         .order("due_date", { ascending: true });
 
@@ -61,7 +78,37 @@ const Archive = () => {
 
       return data as Task[];
     },
+    enabled: !!userId,
   });
+
+  const handleEditTask = (taskId: string) => {
+    // No-op in archive view
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: 'completed' })
+        .eq('id', taskId);
+
+      if (error) throw error;
+
+      toast({
+        title: "המשימה הושלמה בהצלחה",
+        description: "כל הכבוד! המשכ/י כך",
+      });
+      
+      refetch();
+    } catch (error) {
+      console.error('Error completing task:', error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "אירעה שגיאה בעת עדכון המשימה",
+      });
+    }
+  };
 
   const handleRestoreTask = async (taskId: string) => {
     try {
@@ -110,6 +157,10 @@ const Archive = () => {
         description: "אירעה שגיאה בעת מחיקת המשימה",
       });
     }
+  };
+
+  const handleArchiveTask = async (taskId: string) => {
+    // No-op in archive view
   };
 
   const filteredTasks = tasks?.filter(task => 
@@ -179,7 +230,10 @@ const Archive = () => {
               <TaskCard
                 key={task.id}
                 task={task}
+                onEdit={handleEditTask}
+                onComplete={handleCompleteTask}
                 onDelete={handleDeleteTask}
+                onArchive={handleArchiveTask}
                 onRestore={handleRestoreTask}
               />
             ))}
