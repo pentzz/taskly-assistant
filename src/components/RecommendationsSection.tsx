@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { Button } from "./ui/button";
 
 interface Recommendation {
   id: string;
@@ -25,6 +26,9 @@ const getRecommendationIcon = (type: string) => {
 };
 
 export function RecommendationsSection() {
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+
   const { data: recommendations, refetch } = useQuery({
     queryKey: ["recommendations"],
     queryFn: async () => {
@@ -39,50 +43,73 @@ export function RecommendationsSection() {
 
       return recommendations as Recommendation[];
     },
+    enabled: showRecommendations,
   });
 
-  useEffect(() => {
-    const generateRecommendations = async () => {
-      try {
-        await supabase.functions.invoke("generate-recommendations");
-        refetch();
-      } catch (error) {
-        console.error("Error generating recommendations:", error);
-      }
-    };
+  const handleGetHelp = async () => {
+    try {
+      await supabase.functions.invoke("generate-recommendations");
+      setShowRecommendations(true);
+      setIsCollapsed(false);
+      refetch();
+    } catch (error) {
+      console.error("Error generating recommendations:", error);
+    }
+  };
 
-    generateRecommendations();
-  }, [refetch]);
+  if (!showRecommendations) {
+    return (
+      <div className="flex justify-center mb-6">
+        <Button 
+          onClick={handleGetHelp}
+          className="bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          עזור לי לתעדף משימות
+        </Button>
+      </div>
+    );
+  }
 
   if (!recommendations?.length) {
     return null;
   }
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
+    <Card className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-xl font-bold">המלצות העוזר האישי</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {recommendations.map((recommendation) => (
-            <div
-              key={recommendation.id}
-              className="flex items-start gap-3 p-3 rounded-lg bg-gray-50"
-            >
-              {getRecommendationIcon(recommendation.type)}
-              <div>
-                <p className="text-gray-800">{recommendation.content}</p>
-                {recommendation.reasoning && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    {recommendation.reasoning}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
+        <div className="flex gap-2">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+          >
+            {isCollapsed ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronUp className="h-4 w-4" />
+            )}
+          </Button>
         </div>
-      </CardContent>
+      </CardHeader>
+      {!isCollapsed && (
+        <CardContent>
+          <div className="space-y-4">
+            {recommendations.map((recommendation) => (
+              <div
+                key={recommendation.id}
+                className="flex items-start gap-3 p-3 rounded-lg bg-white/80"
+              >
+                {getRecommendationIcon(recommendation.type)}
+                <div>
+                  <p className="text-gray-800">{recommendation.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      )}
     </Card>
   );
 }

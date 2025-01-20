@@ -27,7 +27,6 @@ serve(async (req) => {
       }
     )
 
-    // Get user ID from the JWT token
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(
       authHeader.replace('Bearer ', '')
     )
@@ -50,15 +49,20 @@ serve(async (req) => {
 
     const recommendations = []
 
-    // Check for urgent tasks
-    const urgentTasks = tasks.filter(task => 
-      task.due_date_type === 'urgent' || task.due_date_type === 'asap'
-    )
+    // Check for urgent tasks (due within 2 days)
+    const twoDaysFromNow = new Date()
+    twoDaysFromNow.setDate(twoDaysFromNow.getDate() + 2)
+    
+    const urgentTasks = tasks.filter(task => {
+      if (!task.due_date) return false
+      const dueDate = new Date(task.due_date)
+      return dueDate <= twoDaysFromNow
+    })
+
     if (urgentTasks.length > 0) {
       recommendations.push({
-        content: `יש ${urgentTasks.length} משימות דחופות שדורשות את תשומת לבך`,
+        content: `יש ${urgentTasks.length} משימות דחופות שצריך לטפל בהן בימים הקרובים`,
         type: 'urgent',
-        reasoning: 'משימות מסומנות כדחופות',
         user_id: user.id
       })
     }
@@ -66,20 +70,20 @@ serve(async (req) => {
     // Check for overdue tasks
     const today = new Date()
     const overdueTasks = tasks.filter(task => {
-      if (!task.due_date || task.due_date_type !== 'date') return false
+      if (!task.due_date) return false
       const dueDate = new Date(task.due_date)
       return dueDate < today
     })
+
     if (overdueTasks.length > 0) {
       recommendations.push({
-        content: `${overdueTasks.length} משימות עברו את תאריך היעד`,
+        content: `${overdueTasks.length} משימות עברו את תאריך היעד, כדאי לטפל בהן בהקדם`,
         type: 'overdue',
-        reasoning: 'משימות שעברו את תאריך היעד',
         user_id: user.id
       })
     }
 
-    // Add motivation for completed tasks
+    // Get completed tasks for motivation
     const { data: completedTasks } = await supabaseClient
       .from('tasks')
       .select('*')
@@ -88,9 +92,8 @@ serve(async (req) => {
 
     if (completedTasks && completedTasks.length > 0) {
       recommendations.push({
-        content: `כל הכבוד! השלמת ${completedTasks.length} משימות`,
+        content: `כל הכבוד! השלמת ${completedTasks.length} משימות. המשך כך!`,
         type: 'motivation',
-        reasoning: 'עידוד על השלמת משימות',
         user_id: user.id
       })
     }
