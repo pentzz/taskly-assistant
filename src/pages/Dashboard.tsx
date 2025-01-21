@@ -40,50 +40,64 @@ const Dashboard = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUserId(session.user.id);
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error("Session error:", sessionError);
+        navigate("/login");
+        return;
       }
+      setUserId(session?.user?.id ?? null);
     };
+
+    checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserId(session?.user?.id ?? null);
+      if (!session) {
+        navigate("/login");
+      }
     });
 
-    checkAuth();
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const { data: tasks, isLoading, error, refetch } = useQuery({
     queryKey: ["tasks", statusFilter, userId],
     queryFn: async () => {
       if (!userId) return [];
 
-      let query = supabase
-        .from("tasks")
-        .select("*")
-        .eq('user_id', userId)
-        .eq('is_archived', false)
-        .order("due_date", { ascending: true });
+      try {
+        let query = supabase
+          .from("tasks")
+          .select("*")
+          .eq('user_id', userId)
+          .eq('is_archived', false);
 
-      if (statusFilter && statusFilter !== "all") {
-        query = query.eq("status", statusFilter);
-      }
+        if (statusFilter && statusFilter !== "all") {
+          query = query.eq("status", statusFilter);
+        }
 
-      const { data, error } = await query;
+        const { data, error: fetchError } = await query.order("due_date", { ascending: true });
 
-      if (error) {
-        toast({
-          variant: "destructive",
-          title: "שגיאה בטעינת המשימות",
-          description: error.message,
-        });
+        if (fetchError) {
+          console.error("Error fetching tasks:", fetchError);
+          toast({
+            variant: "destructive",
+            title: "שגיאה בטעינת המשימות",
+            description: "אירעה שגיאה בעת טעינת המשימות. נא לנסות שוב.",
+          });
+          throw fetchError;
+        }
+
+        return data as Task[];
+      } catch (error) {
+        console.error("Error in queryFn:", error);
         throw error;
       }
-
-      return data as Task[];
     },
     enabled: !!userId,
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const handleEditTask = (taskId: string) => {
@@ -170,19 +184,11 @@ const Dashboard = () => {
     (task.description?.toLowerCase() || "").includes(searchQuery.toLowerCase())
   );
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-gradient-to-b from-white to-gray-50">
         <p className="text-red-500 font-semibold">שגיאה בטעינת המשימות</p>
-        <Button onClick={() => window.location.reload()}>נסה שוב</Button>
+        <Button onClick={() => refetch()}>נסה שוב</Button>
       </div>
     );
   }
@@ -229,20 +235,26 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks?.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onEdit={handleEditTask}
-                onComplete={handleCompleteTask}
-                onDelete={handleDeleteTask}
-                onArchive={handleArchiveTask}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredTasks?.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onEdit={handleEditTask}
+                  onComplete={handleCompleteTask}
+                  onDelete={handleDeleteTask}
+                  onArchive={handleArchiveTask}
+                />
+              ))}
+            </div>
+          )}
 
-          {(!filteredTasks || filteredTasks.length === 0) && (
+          {(!filteredTasks || filteredTasks.length === 0) && !isLoading && (
             <div className="text-center py-12">
               <p className="text-gray-400">לא נמצאו משימות</p>
             </div>
