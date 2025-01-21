@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2, Clock, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Button } from "./ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface Recommendation {
   id: string;
@@ -28,6 +29,7 @@ const getRecommendationIcon = (type: string) => {
 export function RecommendationsSection() {
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const { toast } = useToast();
 
   const { data: recommendations, refetch } = useQuery({
     queryKey: ["recommendations"],
@@ -52,14 +54,31 @@ export function RecommendationsSection() {
     const cleanup = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          await supabase
-            .from("recommendations")
-            .delete()
-            .eq("user_id", session.user.id);
+        if (!session) {
+          console.log("No active session found");
+          return;
+        }
+
+        const { error: deleteError } = await supabase
+          .from("recommendations")
+          .delete()
+          .eq("user_id", session.user.id);
+
+        if (deleteError) {
+          console.error("Error deleting recommendations:", deleteError);
+          toast({
+            variant: "destructive",
+            title: "שגיאה במחיקת ההמלצות",
+            description: "אנא נסה שוב מאוחר יותר",
+          });
         }
       } catch (error) {
-        console.error("Error cleaning up recommendations:", error);
+        console.error("Error in cleanup:", error);
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "אירעה שגיאה בעת ניקוי ההמלצות",
+        });
       }
     };
 
@@ -68,19 +87,33 @@ export function RecommendationsSection() {
     }
 
     return () => {
-      cleanup();
       setIsCollapsed(true);
     };
-  }, [showRecommendations]);
+  }, [showRecommendations, toast]);
 
   const handleGetHelp = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "יש להתחבר כדי לקבל המלצות",
+        });
+        return;
+      }
+
       await supabase.functions.invoke("generate-recommendations");
       setShowRecommendations(true);
       setIsCollapsed(false);
       refetch();
     } catch (error) {
       console.error("Error generating recommendations:", error);
+      toast({
+        variant: "destructive",
+        title: "שגיאה",
+        description: "אירעה שגיאה בעת יצירת ההמלצות",
+      });
     }
   };
 
