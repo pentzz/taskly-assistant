@@ -2,12 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: "AIzaSyAI_rqnKV-C8irI_zHjWnSeqjTJD_LpyYo",
+  authDomain: "taskly-assistant-notifications.firebaseapp.com",
+  projectId: "taskly-assistant-notifications",
+  storageBucket: "taskly-assistant-notifications.firebasestorage.app",
+  messagingSenderId: "714798664661",
+  appId: "1:714798664661:web:2acecaa46c44be528e8b5c"
 };
 
 // Initialize Firebase
