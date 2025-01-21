@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -11,14 +12,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Mail } from "lucide-react";
+import { Mail, Key, Info, Save, Check, AlertOctagon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Settings() {
   const [language, setLanguage] = useState("he");
   const [theme, setTheme] = useState("light");
   const [notifications, setNotifications] = useState(true);
+  const [openaiKey, setOpenaiKey] = useState("");
+  const [isValidatingKey, setIsValidatingKey] = useState(false);
+  const [isKeyValid, setIsKeyValid] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
@@ -40,6 +50,8 @@ export default function Settings() {
           setLanguage(data.language || 'he');
           setTheme(data.theme || 'light');
           setNotifications(data.notifications ?? true);
+          setOpenaiKey(data.openai_api_key || '');
+          setIsKeyValid(!!data.openai_api_key);
         }
       } catch (error) {
         console.error('Error loading settings:', error);
@@ -56,12 +68,49 @@ export default function Settings() {
     loadSettings();
   }, [toast]);
 
+  const validateOpenAIKey = async () => {
+    setIsValidatingKey(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data, error } = await supabase.functions.invoke('validate-openai-key', {
+        body: { apiKey: openaiKey },
+      });
+
+      if (error) throw error;
+
+      setIsKeyValid(data.isValid);
+      if (data.isValid) {
+        toast({
+          title: "המפתח תקין",
+          description: "מפתח ה-API אומת בהצלחה",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "מפתח לא תקין",
+          description: "אנא בדוק את המפתח ונסה שוב",
+        });
+      }
+    } catch (error) {
+      console.error('Error validating OpenAI key:', error);
+      setIsKeyValid(false);
+      toast({
+        variant: "destructive",
+        title: "שגיאה באימות המפתח",
+        description: "אנא נסה שוב מאוחר יותר",
+      });
+    } finally {
+      setIsValidatingKey(false);
+    }
+  };
+
   const handleSaveSettings = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      // First check if settings exist for this user
       const { data: existingSettings } = await supabase
         .from('user_settings')
         .select('id')
@@ -71,19 +120,18 @@ export default function Settings() {
       let error;
       
       if (existingSettings) {
-        // Update existing settings
         const { error: updateError } = await supabase
           .from('user_settings')
           .update({
             language,
             theme,
             notifications,
+            openai_api_key: openaiKey,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', session.user.id);
         error = updateError;
       } else {
-        // Insert new settings
         const { error: insertError } = await supabase
           .from('user_settings')
           .insert({
@@ -91,6 +139,7 @@ export default function Settings() {
             language,
             theme,
             notifications,
+            openai_api_key: openaiKey,
             updated_at: new Date().toISOString(),
           });
         error = insertError;
@@ -165,10 +214,58 @@ export default function Settings() {
                 onCheckedChange={setNotifications}
               />
             </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="openai-key" className="text-right">מפתח API אישי ל-OpenAI</Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Info className="h-4 w-4 text-gray-500" />
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        <p>המפתח האישי שלך נדרש להפעלת העוזר האישי. ניתן לקבל מפתח דרך חשבון OpenAI.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isKeyValid === true && <Check className="h-4 w-4 text-green-500" />}
+                  {isKeyValid === false && <AlertOctagon className="h-4 w-4 text-red-500" />}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  id="openai-key"
+                  type="password"
+                  value={openaiKey}
+                  onChange={(e) => {
+                    setOpenaiKey(e.target.value);
+                    setIsKeyValid(null);
+                  }}
+                  placeholder="הזן כאן את מפתח ה-API שלך"
+                  className="text-right"
+                />
+                <Button
+                  variant="outline"
+                  onClick={validateOpenAIKey}
+                  disabled={!openaiKey || isValidatingKey}
+                >
+                  {isValidatingKey ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                  ) : (
+                    <Key className="h-4 w-4" />
+                  )}
+                  בדוק
+                </Button>
+              </div>
+            </div>
           </div>
 
           <div className="pt-6 flex flex-col gap-4">
             <Button onClick={handleSaveSettings} className="w-full">
+              <Save className="ml-2 h-4 w-4" />
               שמור הגדרות
             </Button>
             

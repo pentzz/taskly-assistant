@@ -84,6 +84,7 @@ export type Database = {
           id: string
           language: string | null
           notifications: boolean | null
+          openai_api_key: string | null
           theme: string | null
           updated_at: string | null
           user_id: string | null
@@ -93,6 +94,7 @@ export type Database = {
           id?: string
           language?: string | null
           notifications?: boolean | null
+          openai_api_key?: string | null
           theme?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -102,6 +104,7 @@ export type Database = {
           id?: string
           language?: string | null
           notifications?: boolean | null
+          openai_api_key?: string | null
           theme?: string | null
           updated_at?: string | null
           user_id?: string | null
