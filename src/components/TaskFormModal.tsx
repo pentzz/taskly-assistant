@@ -54,13 +54,26 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
       }
 
       try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          toast({
+            variant: "destructive",
+            title: "שגיאה",
+            description: "יש להתחבר כדי לערוך משימות",
+          });
+          return;
+        }
+
         const { data, error } = await supabase
           .from("tasks")
           .select("*")
           .eq("id", taskId)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error loading task:", error);
+          throw error;
+        }
 
         if (data) {
           setTitle(data.title);
@@ -99,6 +112,16 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
 
     setIsSubmitting(true);
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast({
+          variant: "destructive",
+          title: "שגיאה",
+          description: "יש להתחבר כדי לשמור משימות",
+        });
+        return;
+      }
+
       const taskData = {
         title: title.trim(),
         description: description.trim(),
@@ -107,6 +130,7 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
         status,
         is_recurring: isRecurring,
         recurrence_pattern: isRecurring ? recurrencePattern : null,
+        user_id: session.session.user.id,
       };
 
       let error;
@@ -119,7 +143,10 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
         ({ error } = await supabase.from("tasks").insert([taskData]));
       }
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error saving task:", error);
+        throw error;
+      }
 
       toast({
         title: taskId ? "המשימה עודכנה בהצלחה" : "המשימה נוצרה בהצלחה",
@@ -309,4 +336,4 @@ export function TaskFormModal({ open, onOpenChange, taskId, onTaskCreated }: Tas
       </DialogContent>
     </Dialog>
   );
-}
+};
