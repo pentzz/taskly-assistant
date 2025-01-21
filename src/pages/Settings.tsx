@@ -36,7 +36,10 @@ export default function Settings() {
     const loadSettings = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return;
+        if (!session?.user) {
+          setIsLoading(false);
+          return;
+        }
 
         const { data, error } = await supabase
           .from('user_settings')
@@ -111,41 +114,20 @@ export default function Settings() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
-      const { data: existingSettings } = await supabase
+      const { error: upsertError } = await supabase
         .from('user_settings')
-        .select('id')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
+        .upsert({
+          user_id: session.user.id,
+          language,
+          theme,
+          notifications,
+          openai_api_key: openaiKey,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
+        });
 
-      let error;
-      
-      if (existingSettings) {
-        const { error: updateError } = await supabase
-          .from('user_settings')
-          .update({
-            language,
-            theme,
-            notifications,
-            openai_api_key: openaiKey,
-            updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', session.user.id);
-        error = updateError;
-      } else {
-        const { error: insertError } = await supabase
-          .from('user_settings')
-          .insert({
-            user_id: session.user.id,
-            language,
-            theme,
-            notifications,
-            openai_api_key: openaiKey,
-            updated_at: new Date().toISOString(),
-          });
-        error = insertError;
-      }
-
-      if (error) throw error;
+      if (upsertError) throw upsertError;
 
       toast({
         title: "ההגדרות נשמרו בהצלחה",
